@@ -1,35 +1,34 @@
-import easyocr
-from flask import Flask, request, jsonify
-from tensorflow.keras.models import load_model
-import numpy as np
 import os
-import cv2
-from pmdc import run_ocr, extract_pmdc_data
+from flask import Flask, request, jsonify
+import numpy as np
 
-# =======================================
-# Initialize Flask app
-# =======================================
 app = Flask(__name__)
 
 # =======================================
-# Load Models
+# Lazy-loaded globals
 # =======================================
+_reader = None
+_model_toddler = None
+_model_child = None
+_model_adolescent = None
+
 base_path = os.path.dirname(os.path.abspath(__file__))
 
-# Update these paths as per your actual folders
-model_toddler = load_model(os.path.join(base_path, "QCHAT10", "toddler_model.keras"))
-model_child = load_model(os.path.join(base_path, "AQ10_Child", "child_model.keras"))
-model_adolescent = load_model(os.path.join(base_path, "AQ10_Adolescent", "adolescent_model.keras"))
+def get_reader():
+    global _reader
+    if _reader is None:
+        import easyocr
+        _reader = easyocr.Reader(['en'])
+    return _reader
 
-# =======================================
-# Label Classes (no pickle needed)
-# =======================================
-label_classes = ['NO', 'YES']
-
-# =======================================
-# Initialize EasyOCR Reader
-# =======================================
-reader = easyocr.Reader(['en'])
+def get_models():
+    global _model_toddler, _model_child, _model_adolescent
+    if _model_toddler is None:
+        from tensorflow.keras.models import load_model
+        _model_toddler = load_model(os.path.join(base_path, "QCHAT10", "toddler_model.keras"))
+        _model_child = load_model(os.path.join(base_path, "AQ10_Child", "child_model.keras"))
+        _model_adolescent = load_model(os.path.join(base_path, "AQ10_Adolescent", "adolescent_model.keras"))
+    return _model_toddler, _model_child, _model_adolescent
 
 # =======================================
 # Prediction Route
@@ -37,57 +36,34 @@ reader = easyocr.Reader(['en'])
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        model_toddler, model_child, model_adolescent = get_models()
         data = request.get_json()
-        print("Received data for prediction:", data)  # Debugging log
-        # Validate age
+        print("Received data for prediction:", data)
+
         age = float(data.get('Age', 0))
         if age > 15:
             return jsonify({'error': 'Screening available only for under 16'}), 400
         elif age < 1:
             return jsonify({'error': 'Screening available only for children above 1'}), 400
 
-        # Extract features A1–A10
         features = [data.get(f'A{i}') for i in range(1, 11)]
         if None in features:
             return jsonify({'error': 'Missing one or more question values (A1–A10)'}), 400
 
-        # Add age as the last feature
         features.append(age)
         X_input = np.array(features).reshape(1, -1)
 
-        # Select model based on age
         if age < 4:
-            model = model_toddler
-            model_name = "Toddler (QCHAT-10)"
+            model, model_name = model_toddler, "Toddler (QCHAT-10)"
         elif age < 12:
-            model = model_child
-            model_name = "Child (AQ-10 Child)"
+            model, model_name = model_child, "Child (AQ-10 Child)"
         else:
-            model = model_adolescent
-            model_name = "Adolescent (AQ-10 Adolescent)"
+            model, model_name = model_adolescent, "Adolescent (AQ-10 Adolescent)"
 
-        # Predict
-                # Select model based on age
-        if age < 4:
-            model = model_toddler
-            model_name = "Toddler (QCHAT-10)"
-            threshold = 0.5  # keep standard for toddlers
-        elif age < 12:
-            model = model_child
-            model_name = "Child (AQ-10 Child)"
-            threshold = 0.5  # lower threshold for fewer false negatives
-        else:
-            model = model_adolescent
-            model_name = "Adolescent (AQ-10 Adolescent)"
-            threshold = 0.5  # lower threshold for fewer false negatives
-
-        # Predict
         prediction = model.predict(X_input)
-        pred_label = 1 if prediction[0][0] >= threshold else 0
+        pred_label = 1 if prediction[0][0] >= 0.5 else 0
         result_text = "YES" if pred_label == 1 else "NO"
 
-
-        # Return response
         return jsonify({
             'model_used': model_name,
             'age': age,
@@ -105,6 +81,8 @@ def predict():
 @app.route('/')
 def index():
     return jsonify({'message': 'Autism Screening API is running 🚀'})
+
+
 # =======================================
 # PMDC Verification Route
 # =======================================
@@ -116,8 +94,9 @@ def extract():
     file = request.files["file"]
     image_bytes = file.read()
 
+    from pmdc import run_ocr, extract_pmdc_data
+    reader = get_reader()
     ocr_results = run_ocr(image_bytes)
-
     data = extract_pmdc_data(ocr_results)
 
     return data

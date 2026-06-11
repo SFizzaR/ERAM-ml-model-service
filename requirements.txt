@@ -1,6 +1,4 @@
-flask
-tensorflow
-easyocr
-opencv-python-headless
-numpy
-gunicorn
+Flask==3.0.0
+gunicorn==21.2.0
+numpy==1.24.0
+tensorflow==2.13.0

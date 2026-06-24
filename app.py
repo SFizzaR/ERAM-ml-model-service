@@ -31,6 +31,32 @@ def get_models():
     return _model_toddler, _model_child, _model_adolescent
 
 # =======================================
+# Test Route
+# =======================================
+@app.route('/test-load', methods=['GET'])
+def test_load():
+    try:
+        print("Testing model load...")
+        from tensorflow.keras.models import load_model
+        import tensorflow as tf
+        
+        print(f"TensorFlow version: {tf.__version__}")
+        import keras
+        print(f"Keras version: {keras.__version__}")
+        
+        model_path = os.path.join(base_path, "QCHAT10", "toddler_model.keras")
+        print(f"Model path: {model_path}")
+        print(f"File exists: {os.path.exists(model_path)}")
+        
+        model = load_model(model_path)
+        print("✅ Model loaded successfully!")
+        return jsonify({'status': 'ok', 'tf_version': tf.__version__, 'keras_version': keras.__version__})
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+        
+# =======================================
 # Prediction Route
 # =======================================
 @app.route('/predict', methods=['POST'])

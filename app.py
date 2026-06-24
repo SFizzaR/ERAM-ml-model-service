@@ -36,44 +36,56 @@ def get_models():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        print("🔄 Starting prediction...")
         model_toddler, model_child, model_adolescent = get_models()
+        print("✅ Models loaded")
+        
         data = request.get_json()
-        print("Received data for prediction:", data)
-
+        print("📥 Received data:", data)
+        
         age = float(data.get('Age', 0))
+        print(f"Age: {age}")
+        
         if age > 15:
             return jsonify({'error': 'Screening available only for under 16'}), 400
         elif age < 1:
             return jsonify({'error': 'Screening available only for children above 1'}), 400
-
+        
         features = [data.get(f'A{i}') for i in range(1, 11)]
+        print(f"Features: {features}")
+        
         if None in features:
             return jsonify({'error': 'Missing one or more question values (A1–A10)'}), 400
-
+        
         features.append(age)
         X_input = np.array(features).reshape(1, -1)
-
+        print(f"X_input shape: {X_input.shape}")
+        
         if age < 4:
             model, model_name = model_toddler, "Toddler (QCHAT-10)"
         elif age < 12:
             model, model_name = model_child, "Child (AQ-10 Child)"
         else:
             model, model_name = model_adolescent, "Adolescent (AQ-10 Adolescent)"
-
+        
+        print(f"Using model: {model_name}")
         prediction = model.predict(X_input)
+        print(f"Prediction: {prediction}")
+        
         pred_label = 1 if prediction[0][0] >= 0.5 else 0
         result_text = "YES" if pred_label == 1 else "NO"
-
+        
         return jsonify({
             'model_used': model_name,
             'age': age,
             'prediction_score': float(prediction[0][0]),
             'result': result_text
         })
-
     except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
-
 
 # =======================================
 # Health Check Route

@@ -25,9 +25,9 @@ def get_models():
     global _model_toddler, _model_child, _model_adolescent
     if _model_toddler is None:
         from tensorflow.keras.models import load_model
-        _model_toddler = load_model(os.path.join(base_path, "QCHAT10", "toddler_model.keras"))
-        _model_child = load_model(os.path.join(base_path, "AQ10_Child", "child_model.keras"))
-        _model_adolescent = load_model(os.path.join(base_path, "AQ10_Adolescent", "adolescent_model.keras"))
+        _model_toddler = load_model(os.path.join(base_path, "QCHAT10", "toddler_model.h5"))
+        _model_child = load_model(os.path.join(base_path, "AQ10_Child", "child_model.h5"))
+        _model_adolescent = load_model(os.path.join(base_path, "AQ10_Adolescent", "adolescent_model.h5"))
     return _model_toddler, _model_child, _model_adolescent
 
 # =======================================

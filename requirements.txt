@@ -5,3 +5,4 @@ tensorflow==2.13.0
 opencv-python==4.8.0.76
 Pillow==10.0.0
 tf-keras==2.14.1
+easyocr==1.7.2

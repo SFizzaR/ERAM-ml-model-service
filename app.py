@@ -144,7 +144,7 @@ def extract():
     file = request.files["file"]
     image_bytes = file.read()
 
-   from pmdc import run_ocr, extract_pmdc_data
+    from pmdc import run_ocr, extract_pmdc_data
     reader = get_reader()
     ocr_results = run_ocr(image_bytes)
     data = extract_pmdc_data(ocr_results)

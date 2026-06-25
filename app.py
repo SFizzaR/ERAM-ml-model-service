@@ -136,20 +136,20 @@ def index():
 # =======================================
 # PMDC Verification Route
 # =======================================
-@app.route("/extract", methods=["POST"])
-def extract():
-    if "file" not in request.files:
-        return {"error": "No file uploaded"}, 400
+#@app.route("/extract", methods=["POST"])
+#def extract():
+#    if "file" not in request.files:
+#        return {"error": "No file uploaded"}, 400
+#
+#    file = request.files["file"]
+#    image_bytes = file.read()
 
-    file = request.files["file"]
-    image_bytes = file.read()
+#    from pmdc import run_ocr, extract_pmdc_data
+#    reader = get_reader()
+#    ocr_results = run_ocr(image_bytes)
+#    data = extract_pmdc_data(ocr_results)
 
-    from pmdc import run_ocr, extract_pmdc_data
-    reader = get_reader()
-    ocr_results = run_ocr(image_bytes)
-    data = extract_pmdc_data(ocr_results)
-
-    return data
+#    return data
 
 
 # =======================================

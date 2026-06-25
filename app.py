@@ -137,7 +137,7 @@ def index():
 # PMDC Verification Route
 # =======================================
 @app.route("/extract", methods=["POST"])
- def extract():
+def extract():
     if "file" not in request.files:
         return {"error": "No file uploaded"}, 400
 
